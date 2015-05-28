@@ -1920,6 +1920,18 @@ object TaskManager {
         }
       }
     })
+
+    val file = new File("/")
+    metricRegistry.register("diskUsage", new Gauge[Double] {
+      override def getValue: Double = {
+        file.getFreeSpace.asInstanceOf[Double]/file.getTotalSpace.asInstanceOf[Double]
+      }
+    })
+    metricRegistry.register("freeDiskSpace", new Gauge[Double] {
+      override def getValue: Double = {
+        file.getFreeSpace.asInstanceOf[Double]
+      }
+    })
     metricRegistry
   }
 

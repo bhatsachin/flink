@@ -56,7 +56,7 @@ var taskManagerGraph = [];
 var taskManagerMetrics = [];
 
 // values for the memory charting. In order!
-var memoryValues = ["memory.non-heap.used" , "memory.flink.used", "memory.heap.used" ];
+var memoryValues = ["memory.non-heap.used" , "memory.flink.used", "memory.heap.used"];
 
 var metricsLimit = 3;
 
@@ -96,6 +96,9 @@ function createGraph(tmId, maxload, maxmem) {
         stroke: 'rgba(0,0,0,0.5)'
     });
     taskManagerMemory[tmId]["cpuLoad"] = [];
+    taskManagerMemory[tmId]["diskUsage"] = [];
+    taskManagerMemory[tmId]["freeDiskSpace"] = [];
+
     // add cpu load series
     series.push({
         color: palette.color(),
@@ -198,6 +201,11 @@ function getTooltipHTML(txt) {
  * Initializes taskmanagers table
  */
 function processTMdata(json) {
+    if(json.taskmanagers.length > 3){
+        $("#num_taskmanagers_short").html("3")
+    } else {
+        $("#num_taskmanagers_short").html(json.taskmanagers.length)
+    }
     var tableHeader = $("#taskmanagerTable-header");
     $("#page-title").text("Task Managers ("+json.taskmanagers.length+")");
 	for (var i = 0; i < json.taskmanagers.length; i++) {
@@ -248,6 +256,10 @@ function processTMdata(json) {
                         "<tr><td>Current: <span id=\""+tmRowIdCssName+"-cpuLoad\"></span>%</td>"+"<td>Avg: <span id=\""+tmRowIdCssName+"-avg_cpuLoad\"></span>%</td></tr>"+
                         "<tr><td><b>OS Load</b></td><td></td></tr>"+
                         "<tr><td>Current: <span id=\""+tmRowIdCssName+"-osLoad\"></span></td>"+"<td>Avg: <span id=\""+tmRowIdCssName+"-avg_load\"></span></td></tr>"+
+                        "<tr><td><b>Disk Usage</b></td><td></td></tr>"+
+                        "<tr><td>Current: <span id=\""+tmRowIdCssName+"-diskUsage\"></span>%</td>"+"<td>Avg: <span id=\""+tmRowIdCssName+"-avg_diskUsage\"></span></td></tr>"+
+                        "<tr><td><b>Free Disk Space</b></td><td></td></tr>"+
+                        "<tr><td>Current: <span id=\""+tmRowIdCssName+"-freeDiskSpace\"></span></td>"+"<td>Avg: <span id=\""+tmRowIdCssName+"-avg_freeDiskSpace\"></span></td></tr>"+
                         "<tr><td><b>Memory.heap.used</b></td><td></td></tr>"+
                         "<tr><td>Current: <span id=\""+tmRowIdCssName+"-memHeapUsed\"></span></td>"+"<td>Avg: <span id=\""+tmRowIdCssName+"-avg_memory_heap_used\"></span></td></tr>"+
                         "<tr><td><b>Memory.flink.used</b></td><td></td></tr>"+
@@ -303,6 +315,15 @@ function processTMdata(json) {
             $("#"+tmRowIdCssName+"-cpuLoad").html("NA"+getTooltipHTML("CPU Load is unavailable as the java version is not 1.7 or above"));
         }
 
+        //diskUsage
+        var diskUsageValue = 100 - Number((metricsJSON.gauges["diskUsage"].value*100).toFixed(2));
+        taskManagerMemory[tm.instanceID]["diskUsage"].push({x:time, y:diskUsageValue });
+        $("#"+tmRowIdCssName+"-diskUsage").html(diskUsageValue);
+
+        //freeDiskSpace
+        var freeDiskSpaceValue = Number(metricsJSON.gauges["freeDiskSpace"].value.toFixed(2));
+        taskManagerMemory[tm.instanceID]["freeDiskSpace"].push({x:time, y:freeDiskSpaceValue });
+        $("#"+tmRowIdCssName+"-freeDiskSpace").html(formatBase1024KMGTP(freeDiskSpaceValue));
 
         // generate summary for the last summaryTime minutes
         var summaryStats = generateSummaryFor(taskManagerMemory[tm.instanceID],summaryTime);
